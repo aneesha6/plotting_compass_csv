@@ -5,15 +5,25 @@ import matplotlib.pyplot as plt
 import xml.etree.ElementTree as ET
 
 
-def plot_histogram(data_dict):
+def plot_histogram(data_dict, show_info=False, info_list=None):
     e_short_gate_values = [float(data['e_long_gate']) for data in data_dict.values()]
     
     plt.figure(figsize=(10, 6))
     plt.hist(e_short_gate_values, bins=50, edgecolor='black')
-    plt.xlabel('e_long_gate: E / ADC Channel')
+    plt.xlabel('Energy W / ADC Channel')
     plt.ylabel('Frequency')
-    plt.title('Histogram of e_long_gate')
+    plt.title('Histogram of energy')
     
+    # this section added additional information of the setup and can be selected or deselected with show_info (bool)
+    if show_info and info_list:
+        info_text = r"$\bf{Setup\ info:}$" + "\n" + "\n".join(["    " + info for info in info_list])
+
+        props = dict(boxstyle='round', facecolor='white', alpha=0.5, edgecolor='none')
+        plt.gca().text(0.65, 0.95, info_text, transform=plt.gca().transAxes, fontsize=10,
+                       verticalalignment='top', horizontalalignment='left', bbox=props)
+
+    plt.tight_layout()
+
     # Save the histogram as an SVG file
     plt.savefig('plots/e_long_gate_histogram.svg', format='svg')
     plt.close()
@@ -179,7 +189,8 @@ def main():
     setup_info.update(extract_settings('data/p10_800V_10x_bline-95_30min_waves/settings.xml')) # adding time related info
     setup_info.update({"events_per_sec": f'Events per sec.: {len(data)/setup_info["duration"]}'}) # calc and add events per sec
 
-    plot_histogram(data)
+    key_list = ["n_events", "duration_str", "events_per_sec", "start_time_str", "stop_time_str", "gate_length", "pre_gate_length", "energy_gain"]
+    plot_histogram(data, show_setup_info, dict_to_list(setup_info, key_list))
     plot_samples_scatter(data[3])
     max_samples_list = get_max_samples(data)
     key_list = ["n_events", "duration_str", "events_per_sec", "start_time_str", "stop_time_str"]
