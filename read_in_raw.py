@@ -15,7 +15,7 @@ def plot_histogram(data_dict):
     plt.title('Histogram of e_long_gate')
     
     # Save the histogram as an SVG file
-    plt.savefig('e_long_gate_histogram.svg', format='svg')
+    plt.savefig('plots/e_long_gate_histogram.svg', format='svg')
     plt.close()
     
 
@@ -32,7 +32,7 @@ def plot_samples_scatter(data):
     plt.legend(loc='upper right')
     
     # Save the scatter plot as an SVG file
-    plt.savefig('samples_scatter_plot.svg', format='svg')
+    plt.savefig('plots/samples_scatter_plot.svg', format='svg')
     plt.close()
 
 
@@ -66,16 +66,8 @@ def plot_max_samples_histogram(max_samples_list, show_info=False, info_list=None
     plt.tight_layout()
 
     # Save the histogram as an SVG file
-    plt.savefig('peak_height_histogram.svg', format='svg')
+    plt.savefig('plots/peak_height_histogram.svg', format='svg')
     plt.close()
-
-# Example usage:
-max_samples_list = [1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5]
-info_list = ["Detector: XYZ", "Temperature: 25C", "Voltage: 1.2V"]
-
-plot_max_samples_histogram(max_samples_list, show_info=True, info_list=info_list)
-
-
 
 def read_csv_to_dict(file_path):
     data_dict = {}
