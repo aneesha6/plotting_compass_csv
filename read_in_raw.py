@@ -3,21 +3,27 @@ from datetime import datetime
 import pytz
 import matplotlib.pyplot as plt
 import xml.etree.ElementTree as ET
+import os
+import re
 
 
-def plot_histogram(data_dict, show_info=False, info_list=None):
+import matplotlib.pyplot as plt
+
+def plot_histogram(data_dict, show_info=False, info_list=None, voltage="NaN"):
     e_short_gate_values = [float(data['e_long_gate']) for data in data_dict.values()]
     
     plt.figure(figsize=(10, 6))
-    plt.hist(e_short_gate_values, bins=50, edgecolor='black')
+    bin_counts, bin_edges, _ = plt.hist(e_short_gate_values, bins=50, edgecolor='black')
     plt.xlabel('Energy W / ADC Channel')
     plt.ylabel('Frequency')
     plt.title('Histogram of energy')
-    
-    # this section added additional information of the setup and can be selected or deselected with show_info (bool)
+
+    # Calculate bin centers
+    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+
+    # This section adds additional information of the setup and can be selected or deselected with show_info (bool)
     if show_info and info_list:
         info_text = r"$\bf{Setup\ info:}$" + "\n" + "\n".join(["    " + info for info in info_list])
-
         props = dict(boxstyle='round', facecolor='white', alpha=0.5, edgecolor='none')
         plt.gca().text(0.65, 0.95, info_text, transform=plt.gca().transAxes, fontsize=10,
                        verticalalignment='top', horizontalalignment='left', bbox=props)
@@ -25,8 +31,11 @@ def plot_histogram(data_dict, show_info=False, info_list=None):
     plt.tight_layout()
 
     # Save the histogram as an SVG file
-    plt.savefig('plots/e_long_gate_histogram.svg', format='svg')
+    plt.savefig(f'plots/e_long_gate_histogram_{voltage}.svg', format='svg')
     plt.close()
+
+    return list(zip(bin_centers, bin_counts))
+
     
 
 def plot_samples_scatter(data):
@@ -58,7 +67,7 @@ def get_max_samples(data_dict):
 
 import matplotlib.pyplot as plt
 
-def plot_max_samples_histogram(max_samples_list, show_info=False, info_list=None):
+def plot_max_samples_histogram(max_samples_list, show_info=False, info_list=None, voltage="NaN"):
     plt.figure(figsize=(10, 6))
     plt.hist(max_samples_list, bins=50, edgecolor='black')
     plt.xlabel('Peak height V/ADC Channel')
@@ -76,7 +85,7 @@ def plot_max_samples_histogram(max_samples_list, show_info=False, info_list=None
     plt.tight_layout()
 
     # Save the histogram as an SVG file
-    plt.savefig('plots/peak_height_histogram.svg', format='svg')
+    plt.savefig(f'plots/peak_height_histogram_{voltage}.svg', format='svg')
     plt.close()
 
 def read_csv_to_dict(file_path):
@@ -180,21 +189,41 @@ def dict_to_list(data_dict, key_list):
 def main():
     show_setup_info = True
 
-    file_path = 'data/p10_800V_10x_bline-95_30min_waves/FILTERED/0@DT5720B #2-3-316_Data_p10_800V_10x_bline-95_30min_1.csv'
-    data = read_csv_to_dict(file_path)
+    e_bins = []
 
-    setup_info = {}
-    setup_info.update({"n_events": f'Number capt. events: {len(data)}'}) # adding number of events
-    setup_info.update(extract_measurement_times('data/p10_800V_10x_bline-95_30min_waves/run.info')) # adding time related info
-    setup_info.update(extract_settings('data/p10_800V_10x_bline-95_30min_waves/settings.xml')) # adding time related info
-    setup_info.update({"events_per_sec": f'Events per sec.: {len(data)/setup_info["duration"]}'}) # calc and add events per sec
+    for root, dirs, files in os.walk("data"):
+        for dir in dirs:
+            subdirectory_path = os.path.join(root, dir)
+            file_path = os.path.join(subdirectory_path, f'FILTERED/0@DT5720B #2-3-316_Data_{subdirectory_path.split("/")[1]}.csv')
+            run_info_path = os.path.join(subdirectory_path, 'run.info')
+            settings_path = os.path.join(subdirectory_path, 'settings.xml')
 
-    key_list = ["n_events", "duration_str", "events_per_sec", "start_time_str", "stop_time_str", "gate_length", "pre_gate_length", "energy_gain"]
-    plot_histogram(data, show_setup_info, dict_to_list(setup_info, key_list))
-    plot_samples_scatter(data[3])
-    max_samples_list = get_max_samples(data)
-    key_list = ["n_events", "duration_str", "events_per_sec", "start_time_str", "stop_time_str"]
-    plot_max_samples_histogram(max_samples_list, show_setup_info, dict_to_list(setup_info, key_list))
+            if os.path.exists(file_path):
+                data = read_csv_to_dict(file_path)
+
+                # Extract voltage from the file name
+                voltage_match = re.search(r'_([\d]+)V_', file_path)
+                voltage = voltage_match.group(1) if voltage_match else 'Unknown'
+
+                setup_info = {}
+                setup_info.update({"Voltage": f"Bias voltrage: {voltage} V"})
+                setup_info.update({"n_events": f'Number capt. events: {len(data)}'}) # adding number of events
+                setup_info.update(extract_measurement_times(run_info_path)) # adding time related info
+                setup_info.update(extract_settings(settings_path)) # adding settings related info
+                setup_info.update({"events_per_sec": f'Events per sec.: {round(len(data)/setup_info["duration"],2)}'}) # calc and add events per sec
+                setup_info.update({"voltage": f'{voltage}V'}) # adding voltage info
+
+                key_list = ["n_events", "duration_str", "events_per_sec", "start_time_str", "stop_time_str", "gate_length", "pre_gate_length", "energy_gain", "voltage"]
+                e_bins.append(plot_histogram(data, show_setup_info, dict_to_list(setup_info, key_list), voltage))
+                #plot_samples_scatter(data[3])
+                max_samples_list = get_max_samples(data)
+                key_list = ["n_events", "duration_str", "events_per_sec", "start_time_str", "stop_time_str", "voltage"]
+                plot_max_samples_histogram(max_samples_list, show_setup_info, dict_to_list(setup_info, key_list), voltage)
+            
+            else:
+                print(f"Warning: {file_path} does not exit")
+
+    
 
 
 if __name__ == "__main__":
