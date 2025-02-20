@@ -5,15 +5,16 @@ import matplotlib.pyplot as plt
 import xml.etree.ElementTree as ET
 import os
 import re
+import numpy as np
 
 
 import matplotlib.pyplot as plt
 
 def plot_histogram(data_dict, show_info=False, info_list=None, voltage="NaN"):
-    e_short_gate_values = [float(data['e_long_gate']) for data in data_dict.values()]
+    e_long_gate_values = [float(data['e_long_gate']) for data in data_dict.values()]
     
     plt.figure(figsize=(10, 6))
-    bin_counts, bin_edges, _ = plt.hist(e_short_gate_values, bins=50, edgecolor='black')
+    bin_counts, bin_edges, _ = plt.hist(e_long_gate_values, bins=50, edgecolor='black')
     plt.xlabel('Energy W / ADC Channel')
     plt.ylabel('Frequency')
     plt.title('Histogram of energy')
@@ -34,7 +35,7 @@ def plot_histogram(data_dict, show_info=False, info_list=None, voltage="NaN"):
     plt.savefig(f'plots/e_long_gate_histogram_{voltage}.svg', format='svg')
     plt.close()
 
-    return list(zip(bin_centers, bin_counts))
+    return bin_centers, bin_counts
 
     
 
@@ -67,9 +68,9 @@ def get_max_samples(data_dict):
 
 import matplotlib.pyplot as plt
 
-def plot_max_samples_histogram(max_samples_list, show_info=False, info_list=None, voltage="NaN"):
+def plot_peak_height_histogram(max_samples_list, show_info=False, info_list=None, voltage="NaN"):
     plt.figure(figsize=(10, 6))
-    plt.hist(max_samples_list, bins=50, edgecolor='black')
+    bin_counts, bin_edges, _ = plt.hist(max_samples_list, bins=50, edgecolor='black')
     plt.xlabel('Peak height V/ADC Channel')
     plt.ylabel('Frequency')
     plt.title('Histogram of peak height')
@@ -82,11 +83,16 @@ def plot_max_samples_histogram(max_samples_list, show_info=False, info_list=None
         plt.gca().text(0.65, 0.95, info_text, transform=plt.gca().transAxes, fontsize=10,
                        verticalalignment='top', horizontalalignment='left', bbox=props)
 
+    # Calculate bin centers
+    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+
     plt.tight_layout()
 
     # Save the histogram as an SVG file
     plt.savefig(f'plots/peak_height_histogram_{voltage}.svg', format='svg')
     plt.close()
+
+    return bin_centers, bin_counts
 
 def read_csv_to_dict(file_path):
     data_dict = {}
@@ -183,13 +189,53 @@ def extract_settings(file_path):
         
     return result
 
+def compare_energy_hists(e_bins, voltages):
+    # Define a list of colors
+    colors = plt.cm.viridis(np.linspace(0, 1, len(voltages)))
+
+    plt.figure()
+    
+    for i in range(0, len(voltages)):
+        plt.plot(e_bins[voltages[i]][0], e_bins[voltages[i]][1], color=colors[i], label=f'Bias voltage: {voltages[i]} V')
+
+    plt.xlabel('Energy W / ADC Channel')
+    plt.ylabel('Frequency')
+    plt.title('Comparision energy histograms')
+    plt.legend()
+    
+    plt.tight_layout()
+
+    plt.savefig('plots/energy_bins_comparision.svg', format='svg')
+
+
+def compare_peak_height_hists(ph_bins, voltages):
+    # Define a list of colors
+    colors = plt.cm.viridis(np.linspace(0, 1, len(voltages)))
+
+    plt.figure()
+    
+    for i in range(0, len(voltages)):
+        plt.plot(ph_bins[voltages[i]][0], ph_bins[voltages[i]][1], color=colors[i], label=f'Bias voltage: {voltages[i]} V')
+
+    plt.xlabel('Peak height V / ADC Channel')
+    plt.ylabel('Frequency')
+    plt.title('Comparision peak height histograms')
+    plt.legend()
+    
+    plt.tight_layout()
+
+    plt.savefig('plots/peak_height_bins_comparision.svg', format='svg')
+
+
 def dict_to_list(data_dict, key_list):
     return [data_dict[key] for key in key_list if key in data_dict]
 
 def main():
     show_setup_info = True
 
-    e_bins = []
+    e_bins = {}
+    ph_bins = {}
+    voltages = []
 
     for root, dirs, files in os.walk("data"):
         for dir in dirs:
@@ -214,16 +260,22 @@ def main():
                 setup_info.update({"voltage": f'{voltage}V'}) # adding voltage info
 
                 key_list = ["n_events", "duration_str", "events_per_sec", "start_time_str", "stop_time_str", "gate_length", "pre_gate_length", "energy_gain", "voltage"]
-                e_bins.append(plot_histogram(data, show_setup_info, dict_to_list(setup_info, key_list), voltage))
+                e_bins_pos_tmp, e_bins_counts_tmp = plot_histogram(data, show_setup_info, dict_to_list(setup_info, key_list), voltage)
                 #plot_samples_scatter(data[3])
                 max_samples_list = get_max_samples(data)
                 key_list = ["n_events", "duration_str", "events_per_sec", "start_time_str", "stop_time_str", "voltage"]
-                plot_max_samples_histogram(max_samples_list, show_setup_info, dict_to_list(setup_info, key_list), voltage)
-            
+                ph_bin_pos_tmp, ph_bin_count_tmp = plot_peak_height_histogram(max_samples_list, show_setup_info, dict_to_list(setup_info, key_list), voltage)
+                voltages.append(voltage)
+                e_bins.update({f"{voltage}": [e_bins_pos_tmp, e_bins_counts_tmp]})
+                ph_bins.update({f"{voltage}": [ph_bin_pos_tmp, ph_bin_count_tmp]})
+
             else:
                 print(f"Warning: {file_path} does not exit")
 
-    
+
+    voltages_list = sorted(voltages, key=int)
+    compare_energy_hists(e_bins, voltages_list)    
+    compare_peak_height_hists(ph_bins, voltages_list)    
 
 
 if __name__ == "__main__":
