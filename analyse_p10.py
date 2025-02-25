@@ -10,17 +10,31 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 
-def plot_histogram(data_dict, show_info=False, info_list=None, voltage="NaN"):
+
+def plot_energy_histogram(data_dict, show_info=False, info_list=None, voltage="NaN"):
     e_long_gate_values = [float(data['e_long_gate']) for data in data_dict.values()]
     
     plt.figure(figsize=(10, 6))
-    bin_counts, bin_edges, _ = plt.hist(e_long_gate_values, bins=50, edgecolor='black')
+    bin_counts, bin_edges, _ = plt.hist(e_long_gate_values, bins=30, edgecolor='black')
     plt.xlabel('Energy W / ADC Channel')
     plt.ylabel('Frequency')
     plt.title('Histogram of energy')
 
     # Calculate bin centers
     bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+
+    # Calculate mean and median
+    mean_value = np.mean(e_long_gate_values)
+    median_value = np.median(e_long_gate_values)
+
+    # Plot vertical lines for mean and median (from 0% to 70% of plot height)
+    max_height = max(bin_counts)
+    plt.plot([mean_value, mean_value], [0, max_height * 0.8], color='r', linestyle='dashed', linewidth=1, label=f'Mean: {mean_value:.2f}')
+    plt.plot([median_value, median_value], [0, max_height * 0.8], color='b', linestyle='dashed', linewidth=1, label=f'Median: {median_value:.2f}')
+
+    # Add ticks on top of the lines
+    plt.text(mean_value, max_height * 0.82, f'Mean\n {mean_value:.0f}', ha='center', va='bottom', color='r')
+    plt.text(median_value, max_height * 0.82, f'Median\n {median_value:.0f}', ha='center', va='bottom', color='b')
 
     # This section adds additional information of the setup and can be selected or deselected with show_info (bool)
     if show_info and info_list:
@@ -35,7 +49,8 @@ def plot_histogram(data_dict, show_info=False, info_list=None, voltage="NaN"):
     plt.savefig(f'plots/e_long_gate_histogram_{voltage}.svg', format='svg')
     plt.close()
 
-    return bin_centers, bin_counts
+    return bin_centers, bin_counts, round(mean_value,1)
+
 
     
 
@@ -66,19 +81,30 @@ def get_max_samples(data_dict):
     
     return max_samples_list
 
-import matplotlib.pyplot as plt
 
 def plot_peak_height_histogram(max_samples_list, show_info=False, info_list=None, voltage="NaN"):
     plt.figure(figsize=(10, 6))
-    bin_counts, bin_edges, _ = plt.hist(max_samples_list, bins=50, edgecolor='black')
+    bin_counts, bin_edges, _ = plt.hist(max_samples_list, bins=30, edgecolor='black')
     plt.xlabel('Peak height V/ADC Channel')
     plt.ylabel('Frequency')
     plt.title('Histogram of peak height')
 
-    # this section added additional information of the setup and can be selected or deselected with show_info (bool)
+    # Calculate mean and median
+    mean_value = np.mean(max_samples_list)
+    median_value = np.median(max_samples_list)
+
+    # Plot vertical lines for mean and median (from 0% to 70% of plot height)
+    max_height = max(bin_counts)
+    plt.plot([mean_value, mean_value], [0, max_height * 0.7], color='r', linestyle='dashed', linewidth=1, label=f'Mean: {mean_value:.2f}')
+    plt.plot([median_value, median_value], [0, max_height * 0.7], color='b', linestyle='dashed', linewidth=1, label=f'Median: {median_value:.2f}')
+
+    # Add ticks on top of the lines
+    plt.text(mean_value, max_height * 0.72, f'Mean:\n{mean_value:.2f}', ha='center', va='bottom', color='r')
+    plt.text(median_value, max_height * 0.72, f'Median\n{median_value:.2f}', ha='center', va='bottom', color='b')
+
+    # This section adds additional information of the setup and can be selected or deselected with show_info (bool)
     if show_info and info_list:
         info_text = r"$\bf{Setup\ info:}$" + "\n" + "\n".join(["    " + info for info in info_list])
-
         props = dict(boxstyle='round', facecolor='white', alpha=0.5, edgecolor='none')
         plt.gca().text(0.65, 0.95, info_text, transform=plt.gca().transAxes, fontsize=10,
                        verticalalignment='top', horizontalalignment='left', bbox=props)
@@ -92,7 +118,7 @@ def plot_peak_height_histogram(max_samples_list, show_info=False, info_list=None
     plt.savefig(f'plots/peak_height_histogram_{voltage}.svg', format='svg')
     plt.close()
 
-    return bin_centers, bin_counts
+    return bin_centers, bin_counts, round(mean_value,1)
 
 def read_csv_to_dict(file_path):
     data_dict = {}
@@ -189,7 +215,7 @@ def extract_settings(file_path):
         
     return result
 
-def compare_energy_hists(e_bins, voltages):
+def plot_compare_energy_hists(e_bins, voltages):
     # Define a list of colors
     colors = plt.cm.viridis(np.linspace(0, 1, len(voltages)))
 
@@ -206,9 +232,11 @@ def compare_energy_hists(e_bins, voltages):
     plt.tight_layout()
 
     plt.savefig('plots/energy_bins_comparision.svg', format='svg')
+    plt.close()
 
 
-def compare_peak_height_hists(ph_bins, voltages):
+
+def plot_compare_peak_height_hists(ph_bins, voltages):
     # Define a list of colors
     colors = plt.cm.viridis(np.linspace(0, 1, len(voltages)))
 
@@ -226,6 +254,36 @@ def compare_peak_height_hists(ph_bins, voltages):
 
     plt.savefig('plots/peak_height_bins_comparision.svg', format='svg')
 
+    plt.close()
+
+
+def plot_means_over_voltages(dict1, dict2,voltages):
+
+    bais_voltages = []
+    means_e = []
+    means_ph = []
+
+    for voltage in voltages:
+        bais_voltages.append(int(voltage))
+        means_e.append(int(dict1[voltage]))
+        means_ph.append(int(dict2[voltage]))
+
+    fig, ax1 = plt.subplots()
+
+    ax1.plot(bais_voltages, means_e, marker='o', linestyle='-', label='Dict 1', color='b')
+    ax1.set_xlabel('Mean Bias Voltage')
+    ax1.set_ylabel('Mean Energy W / ADC Channels', color='b')
+
+    ax2 = ax1.twinx()
+    ax2.plot(bais_voltages, means_ph, marker='x', linestyle='--', label='Dict 2', color='r')
+    ax2.set_ylabel('Peak Height V / ADC Channel', color='r')
+
+    plt.title('Energy and Peak Height Means vs. Bias Voltage')
+    fig.tight_layout()
+
+    plt.savefig('plots/means_over_voltages.svg', format='svg')
+    plt.close()
+
 
 def dict_to_list(data_dict, key_list):
     return [data_dict[key] for key in key_list if key in data_dict]
@@ -236,6 +294,8 @@ def main():
     e_bins = {}
     ph_bins = {}
     voltages = []
+    means_e = {}
+    means_ph = {}
 
     for root, dirs, files in os.walk("data"):
         for dir in dirs:
@@ -252,30 +312,32 @@ def main():
                 voltage = voltage_match.group(1) if voltage_match else 'Unknown'
 
                 setup_info = {}
-                setup_info.update({"Voltage": f"Bias voltrage: {voltage} V"})
+                setup_info.update({"voltage": f"Bias voltrage: {voltage} V"})
                 setup_info.update({"n_events": f'Number capt. events: {len(data)}'}) # adding number of events
                 setup_info.update(extract_measurement_times(run_info_path)) # adding time related info
                 setup_info.update(extract_settings(settings_path)) # adding settings related info
                 setup_info.update({"events_per_sec": f'Events per sec.: {round(len(data)/setup_info["duration"],2)}'}) # calc and add events per sec
-                setup_info.update({"voltage": f'{voltage}V'}) # adding voltage info
 
-                key_list = ["n_events", "duration_str", "events_per_sec", "start_time_str", "stop_time_str", "gate_length", "pre_gate_length", "energy_gain", "voltage"]
-                e_bins_pos_tmp, e_bins_counts_tmp = plot_histogram(data, show_setup_info, dict_to_list(setup_info, key_list), voltage)
+                key_list = ["voltage", "n_events", "duration_str", "events_per_sec", "start_time_str", "stop_time_str", "gate_length", "pre_gate_length", "energy_gain"]
+                e_bins_pos_tmp, e_bins_counts_tmp, mean_e_tmp = plot_energy_histogram(data, show_setup_info, dict_to_list(setup_info, key_list), voltage)
                 #plot_samples_scatter(data[3])
                 max_samples_list = get_max_samples(data)
-                key_list = ["n_events", "duration_str", "events_per_sec", "start_time_str", "stop_time_str", "voltage"]
-                ph_bin_pos_tmp, ph_bin_count_tmp = plot_peak_height_histogram(max_samples_list, show_setup_info, dict_to_list(setup_info, key_list), voltage)
+                key_list = ["voltage", "n_events", "duration_str", "events_per_sec", "start_time_str", "stop_time_str"]
                 voltages.append(voltage)
+                ph_bin_pos_tmp, ph_bin_count_tmp, mean_ph_tmp = plot_peak_height_histogram(max_samples_list, show_setup_info, dict_to_list(setup_info, key_list), voltage)
                 e_bins.update({f"{voltage}": [e_bins_pos_tmp, e_bins_counts_tmp]})
                 ph_bins.update({f"{voltage}": [ph_bin_pos_tmp, ph_bin_count_tmp]})
+                means_e.update({f"{voltage}": mean_e_tmp})
+                means_ph.update({f"{voltage}": mean_ph_tmp})
 
             else:
                 print(f"Warning: {file_path} does not exit")
 
 
     voltages_list = sorted(voltages, key=int)
-    compare_energy_hists(e_bins, voltages_list)    
-    compare_peak_height_hists(ph_bins, voltages_list)    
+    plot_compare_energy_hists(e_bins, voltages_list)    
+    plot_compare_peak_height_hists(ph_bins, voltages_list)
+    plot_means_over_voltages(means_e,means_ph, voltages_list)    
 
 
 if __name__ == "__main__":
