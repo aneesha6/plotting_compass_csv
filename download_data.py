@@ -1,49 +1,33 @@
 import gdown
-import os
-import requests
 import zipfile
+import os
+import shutil
 
-# Google Drive folder ID (replace with your actual folder ID)
-folder_id = "your_folder_id_here"
+# Google Drive file ID (replace with your actual file ID)
+file_id = "1qBRWbMQdiLk6g8vi7Rbga3DJ8Gb4qL1G"
 
-# Destination folder for unzipped files
-unzipped_folder = "unzipped_files"
+# Destination file paths
+zip_file = "downloaded_file.zip"
+extracted_folder = "extracted_content"
+data_folder = "data"
+os.makedirs(data_folder, exist_ok=True)
 
-# Ensure the unzipped folder exists
-os.makedirs(unzipped_folder, exist_ok=True)
+# Download the ZIP file
+gdown.download(f"https://drive.google.com/uc?id={file_id}", zip_file, quiet=False)
 
-# Get file metadata (list of files in the folder)
-metadata_url = f"https://www.googleapis.com/drive/v3/files?q='{folder_id}'+in+parents&fields=files(id,name)"
-headers = {"Accept": "application/json"}
+# Extract the ZIP file
+with zipfile.ZipFile(zip_file, "r") as zip_ref:
+    zip_ref.extractall(extracted_folder)
 
-response = requests.get(metadata_url, headers=headers)
+# Move the contents of extracted subfolders to 'data' directory
+for root, dirs, files in os.walk(extracted_folder):
+    for name in dirs:
+        source_dir = os.path.join(root, name)
+        shutil.move(source_dir, data_folder)
 
-if response.status_code == 200:
-    files = response.json().get("files", [])
-    for file in files:
-        file_id = file["id"]
-        file_name = file["name"]
+# Clean up: delete the downloaded ZIP file and the extracted folder
+os.remove(zip_file)
+shutil.rmtree(extracted_folder)
 
-        # Process only ZIP files
-        if file_name.endswith(".zip"):
-            # Check if ZIP file already exists
-            if os.path.exists(file_name):
-                print(f"Skipping {file_name}, already exists.")
-            else:
-                print(f"Downloading {file_name}...")
-                url = f"https://drive.google.com/uc?id={file_id}"
-                gdown.download(url, file_name, quiet=False)
-                print(f"Downloaded {file_name}")
+print(f"All subfolder contents moved to '{data_folder}' and cleanup completed.")
 
-            # Unzip the file if not already extracted
-            extract_path = os.path.join(unzipped_folder, file_name.replace(".zip", ""))
-            if not os.path.exists(extract_path):
-                print(f"Unzipping {file_name}...")
-                with zipfile.ZipFile(file_name, "r") as zip_ref:
-                    zip_ref.extractall(extract_path)
-                print(f"Extracted to {extract_path}")
-            else:
-                print(f"Skipping unzip, {file_name} already extracted.")
-
-else:
-    print("Failed to retrieve file list. Ensure the folder is public or use authentication.")
