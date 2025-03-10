@@ -7,10 +7,6 @@ import os
 import re
 import numpy as np
 
-
-import matplotlib.pyplot as plt
-
-
 def plot_energy_histogram(data_dict, show_info=False, info_list=None, voltage="NaN"):
     e_long_gate_values = [float(data['e_long_gate']) for data in data_dict.values()]
     
@@ -27,14 +23,14 @@ def plot_energy_histogram(data_dict, show_info=False, info_list=None, voltage="N
     mean_value = np.mean(e_long_gate_values)
     median_value = np.median(e_long_gate_values)
 
-    # Plot vertical lines for mean and median (from 0% to 70% of plot height)
-    max_height = max(bin_counts)
-    plt.plot([mean_value, mean_value], [0, max_height * 0.8], color='r', linestyle='dashed', linewidth=1, label=f'Mean: {mean_value:.2f}')
-    plt.plot([median_value, median_value], [0, max_height * 0.8], color='b', linestyle='dashed', linewidth=1, label=f'Median: {median_value:.2f}')
+    # Plot vertical lines for mean and median (from 0% to 80% of plot height)
+    #max_height = max(bin_counts)
+    #plt.plot([mean_value, mean_value], [0, max_height * 0.8], color='r', linestyle='dashed', linewidth=1, label=f'Mean: {mean_value:.2f}')
+    #plt.plot([median_value, median_value], [0, max_height * 0.8], color='b', linestyle='dashed', linewidth=1, label=f'Median: {median_value:.2f}')
 
     # Add ticks on top of the lines
-    plt.text(mean_value, max_height * 0.82, f'Mean\n {mean_value:.0f}', ha='center', va='bottom', color='r')
-    plt.text(median_value, max_height * 0.82, f'Median\n {median_value:.0f}', ha='center', va='bottom', color='b')
+    #plt.text(mean_value, max_height * 0.82, f'Mean\n {mean_value:.0f}', ha='center', va='bottom', color='r')
+    #plt.text(median_value, max_height * 0.82, f'Median\n {median_value:.0f}', ha='center', va='bottom', color='b')
 
     # This section adds additional information of the setup and can be selected or deselected with show_info (bool)
     if show_info and info_list:
@@ -92,13 +88,13 @@ def plot_peak_height_histogram(max_samples_list, show_info=False, info_list=None
     median_value = np.median(max_samples_list)
 
     # Plot vertical lines for mean and median (from 0% to 70% of plot height)
-    max_height = max(bin_counts)
-    plt.plot([mean_value, mean_value], [0, max_height * 0.7], color='r', linestyle='dashed', linewidth=1, label=f'Mean: {mean_value:.2f}')
-    plt.plot([median_value, median_value], [0, max_height * 0.7], color='b', linestyle='dashed', linewidth=1, label=f'Median: {median_value:.2f}')
+    #max_height = max(bin_counts)
+    #plt.plot([mean_value, mean_value], [0, max_height * 0.7], color='r', linestyle='dashed', linewidth=1, label=f'Mean: {mean_value:.2f}')
+    #plt.plot([median_value, median_value], [0, max_height * 0.7], color='b', linestyle='dashed', linewidth=1, label=f'Median: {median_value:.2f}')
 
     # Add ticks on top of the lines
-    plt.text(mean_value, max_height * 0.72, f'Mean:\n{mean_value:.2f}', ha='center', va='bottom', color='r')
-    plt.text(median_value, max_height * 0.72, f'Median\n{median_value:.2f}', ha='center', va='bottom', color='b')
+    #plt.text(mean_value, max_height * 0.72, f'Mean:\n{mean_value:.2f}', ha='center', va='bottom', color='r')
+    #plt.text(median_value, max_height * 0.72, f'Median\n{median_value:.2f}', ha='center', va='bottom', color='b')
 
     # This section adds additional information of the setup and can be selected or deselected with show_info (bool)
     if show_info and info_list:
