@@ -52,8 +52,6 @@ def plot_energy_histogram(data_dict, show_info=False, info_list=None, voltage="N
     return bin_centers, bin_counts, round(mean_value,1)
 
 
-    
-
 def plot_samples_scatter(data):
     samples = [float(sample) for sample in data['samples']]
     positions = list(range(len(samples)))
@@ -297,10 +295,10 @@ def main():
     means_e = {}
     means_ph = {}
 
-    for root, dirs, files in os.walk("data"):
+    for root, dirs, files in os.walk("data/first_data_sequence"):
         for dir in dirs:
             subdirectory_path = os.path.join(root, dir)
-            file_path = os.path.join(subdirectory_path, f'FILTERED/0@DT5720B #2-3-316_Data_{subdirectory_path.split("/")[1]}.csv')
+            file_path = os.path.join(subdirectory_path, f'FILTERED/0@DT5720B #2-3-316_Data_{subdirectory_path.split("first_data_sequence/")[1]}.csv')
             run_info_path = os.path.join(subdirectory_path, 'run.info')
             settings_path = os.path.join(subdirectory_path, 'settings.xml')
 
