@@ -42,7 +42,7 @@ def plot_energy_histogram(data_dict, show_info=False, info_list=None, voltage="N
     plt.tight_layout()
 
     # Save the histogram as an SVG file
-    plt.savefig(f'plots/e_long_gate_histogram_{voltage}.svg', format='svg')
+    plt.savefig(f'plots/first_seq/e_long_gate_histogram_{voltage}.svg', format='svg')
     plt.close()
 
     return bin_centers, bin_counts, round(mean_value,1)
@@ -61,7 +61,7 @@ def plot_samples_scatter(data):
     plt.legend(loc='upper right')
     
     # Save the scatter plot as an SVG file
-    plt.savefig('plots/samples_scatter_plot.svg', format='svg')
+    plt.savefig('plots/first_seq/samples_scatter_plot.svg', format='svg')
     plt.close()
 
 
@@ -109,7 +109,7 @@ def plot_peak_height_histogram(max_samples_list, show_info=False, info_list=None
     plt.tight_layout()
 
     # Save the histogram as an SVG file
-    plt.savefig(f'plots/peak_height_histogram_{voltage}.svg', format='svg')
+    plt.savefig(f'plots/first_seq/peak_height_histogram_{voltage}.svg', format='svg')
     plt.close()
 
     return bin_centers, bin_counts, round(mean_value,1)
@@ -225,7 +225,7 @@ def plot_compare_energy_hists(e_bins, voltages):
     
     plt.tight_layout()
 
-    plt.savefig('plots/energy_bins_comparision.svg', format='svg')
+    plt.savefig('plots/first_seq/energy_bins_comparision.svg', format='svg')
     plt.close()
 
 
@@ -246,7 +246,7 @@ def plot_compare_peak_height_hists(ph_bins, voltages):
     
     plt.tight_layout()
 
-    plt.savefig('plots/peak_height_bins_comparision.svg', format='svg')
+    plt.savefig('plots/first_seq/peak_height_bins_comparision.svg', format='svg')
 
     plt.close()
 
@@ -275,7 +275,7 @@ def plot_means_over_voltages(dict1, dict2,voltages):
     plt.title('Energy and Peak Height Means vs. Bias Voltage')
     fig.tight_layout()
 
-    plt.savefig('plots/means_over_voltages.svg', format='svg')
+    plt.savefig('plots/first_seq/means_over_voltages.svg', format='svg')
     plt.close()
 
 
