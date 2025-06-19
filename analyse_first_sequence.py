@@ -75,10 +75,27 @@ def get_max_samples(data_dict):
     
     return max_samples_list
 
+import numpy as np
+import matplotlib.pyplot as plt
 
-def plot_peak_height_histogram(max_samples_list, show_info=False, info_list=None, voltage="NaN"):
+def plot_peak_height_histogram(max_samples_list, show_info=False, info_list=None, voltage="NaN", 
+                                show_mean=False, remove_lower_bins=0, remove_higher_bins=0):
+    # Calculate histogram data
+    bin_counts, bin_edges = np.histogram(max_samples_list, bins=30)
+    
+    # Remove specified lower and higher bins
+    if remove_lower_bins > 0:
+        bin_counts = bin_counts[remove_lower_bins:]
+        bin_edges = bin_edges[remove_lower_bins:]
+    
+    if remove_higher_bins > 0:
+        bin_counts = bin_counts[:-remove_higher_bins]
+        bin_edges = bin_edges[:-remove_higher_bins]  # Adjust edges accordingly
+
     plt.figure(figsize=(10, 6))
-    bin_counts, bin_edges, _ = plt.hist(max_samples_list, bins=30, edgecolor='black')
+    plt.hist(bin_edges[:-1], bins=bin_edges, weights=bin_counts, edgecolor='black')
+    plt.xlim(0, 4200)
+
     plt.xlabel('Peak height V/ADC Channel')
     plt.ylabel('Frequency')
     plt.title('Histogram of peak height')
@@ -87,14 +104,18 @@ def plot_peak_height_histogram(max_samples_list, show_info=False, info_list=None
     mean_value = np.mean(max_samples_list)
     median_value = np.median(max_samples_list)
 
-    # Plot vertical lines for mean and median (from 0% to 70% of plot height)
-    #max_height = max(bin_counts)
-    #plt.plot([mean_value, mean_value], [0, max_height * 0.7], color='r', linestyle='dashed', linewidth=1, label=f'Mean: {mean_value:.2f}')
-    #plt.plot([median_value, median_value], [0, max_height * 0.7], color='b', linestyle='dashed', linewidth=1, label=f'Median: {median_value:.2f}')
+    # Plot vertical lines for mean and median if show_stats is True
+    if show_mean:
+        max_height = max(bin_counts)
+        plt.plot([mean_value, mean_value], [0, max_height * 0.7], color='r', linestyle='dashed', linewidth=1, label=f'Mean: {mean_value:.2f}')
+        plt.plot([median_value, median_value], [0, max_height * 0.7], color='b', linestyle='dashed', linewidth=1, label=f'Median: {median_value:.2f}')
 
-    # Add ticks on top of the lines
-    #plt.text(mean_value, max_height * 0.72, f'Mean:\n{mean_value:.2f}', ha='center', va='bottom', color='r')
-    #plt.text(median_value, max_height * 0.72, f'Median\n{median_value:.2f}', ha='center', va='bottom', color='b')
+        # Add ticks on top of the lines
+        plt.text(mean_value, max_height * 0.72, f'Mean:\n{mean_value:.2f}', ha='center', va='bottom', color='r')
+        plt.text(median_value, max_height * 0.72, f'Median\n{median_value:.2f}', ha='center', va='bottom', color='b')
+
+        # Add legend for mean and median
+        plt.legend()
 
     # This section adds additional information of the setup and can be selected or deselected with show_info (bool)
     if show_info and info_list:
@@ -103,16 +124,14 @@ def plot_peak_height_histogram(max_samples_list, show_info=False, info_list=None
         plt.gca().text(0.65, 0.95, info_text, transform=plt.gca().transAxes, fontsize=10,
                        verticalalignment='top', horizontalalignment='left', bbox=props)
 
-    # Calculate bin centers
-    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
-
     plt.tight_layout()
 
     # Save the histogram as an SVG file
     plt.savefig(f'plots/first_seq/peak_height_histogram_{voltage}.svg', format='svg')
     plt.close()
 
-    return bin_centers, bin_counts, round(mean_value,1)
+    return bin_edges[:-1], bin_counts, round(mean_value, 1)
+
 
 def read_csv_to_dict(file_path):
     data_dict = {}
@@ -318,7 +337,11 @@ def main():
                 max_samples_list = get_max_samples(data)
                 key_list = ["voltage", "n_events", "duration_str", "events_per_sec", "start_time_str", "stop_time_str"]
                 voltages.append(voltage)
+
+
                 ph_bin_pos_tmp, ph_bin_count_tmp, mean_ph_tmp = plot_peak_height_histogram(max_samples_list, show_setup_info, dict_to_list(setup_info, key_list), voltage)
+                ph_bin_pos_tmp, ph_bin_count_tmp, mean_ph_tmp = plot_peak_height_histogram(max_samples_list, show_setup_info, dict_to_list(setup_info, key_list), voltage, 
+                           show_mean=False, remove_lower_bins=2, remove_higher_bins=2)
                 e_bins.update({f"{voltage}": [e_bins_pos_tmp, e_bins_counts_tmp]})
                 ph_bins.update({f"{voltage}": [ph_bin_pos_tmp, ph_bin_count_tmp]})
                 means_e.update({f"{voltage}": mean_e_tmp})
